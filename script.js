@@ -28,7 +28,14 @@ navigator.geolocation.getCurrentPosition(
             console.log(mapEvent);
             const {lat, lng} = mapEvent.latlng;
             L.marker([lat, lng]).addTo(map)
-            .bindPopup('Walking')
+            .bindPopup(L.popup({
+                maxWidth: 250,
+                minWidth: 100,
+                autoClose: false,
+                closeOnClick: false,
+                className: 'running-popup'
+            }))
+            .setPopupContent('Walking')
             .openPopup();
         })
     }, 
