@@ -3,6 +3,7 @@
 class Workout {
     date = new Date();
     id = (Date.now() + '').slice(-10);
+    clicks = 0;
 
     constructor (coords, distance, duration) {
         this.coords = coords; // [lat, lng]
@@ -14,6 +15,10 @@ class Workout {
         const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
         this.description = `${this.type[0].toUpperCase()}${this.type.slice(1)} on ${months[this.date.getMonth()]} ${this.date.getDate()}`;
+    }
+
+    click() {
+        this.clicks++;
     }
 }
 class Running extends Workout {
@@ -64,12 +69,14 @@ const inputElevation = document.querySelector('.form__input--elevation');
 
 class App {
     #map;
+    #mapZoomLevel = 13;
     #mapEvent;
     #workouts = [];
     constructor() {
         this._getPosition();
         form.addEventListener('submit', this._newWorkout.bind(this));
         inputType.addEventListener('change', this._toggleElevationField.bind(this));
+        containerWorkouts.addEventListener('click', this._moveToPopup.bind(this));
     };
 
     _getPosition() {
@@ -86,7 +93,7 @@ class App {
         const coords = [latitude, longitude];
 
         console.log(`https://www.google.com/maps/@${latitude},${longitude}`);
-        this.#map = L.map('map').setView(coords, 13);
+        this.#map = L.map('map').setView(coords, this.#mapZoomLevel);
         // console.log(map);
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'})
         .addTo(this.#map);
@@ -238,57 +245,35 @@ class App {
         }
 
         form.insertAdjacentHTML('afterend', html);
+    }
 
-    //     let html = `
-    //   <li class="workout workout--${workout.type}" data-id="${workout.id}">
-    //     <h2 class="workout__title">${workout.description}</h2>
-    //     <div class="workout__details">
-    //         <span class="workout__icon">${
-    //           workout.type === 'running' ? '🏃‍♂️' : '🚴‍♀️'
-    //         }</span>
-    //         <span class="workout__value">${workout.distance}</span>
-    //         <span class="workout__unit">km</span>
-    //     </div>
-    //     <div class="workout__details">
-    //         <span class="workout__icon">⏱</span>
-    //         <span class="workout__value">${workout.duration}</span>
-    //         <span class="workout__unit">min</span>
-    //     </div>
-    // `;
+    _moveToPopup(e) {
+        const workoutEl = e.target.closest('.workout');
+        console.log(workoutEl);
 
-    // if (workout.type === 'running') {
-    //     html += `
-    //     <div class="workout__details">
-    //         <span class="workout__icon">⚡️</span>
-    //         <span class="workout__value">${workout.pace.toFixed(1)}</span>
-    //         <span class="workout__unit">min/km</span>
-    //     </div>
-    //     <div class="workout__details">
-    //         <span class="workout__icon">🦶🏼</span>
-    //         <span class="workout__value">${workout.cadence}</span>
-    //         <span class="workout__unit">spm</span>
-    //     </div>
-    //     `;
-    // }
+        if (!workoutEl) {
+            return;
+        }
+        
+        const clickedId = workoutEl.dataset.id;
+        // Search for the matching workout in the array
+        const workout = this.#workouts.find(function(work) {
+        return work.id === clickedId;
+        });
 
-    // if (workout.type === 'cycling') {
-    //     html += `
-    //     <div class="workout__details">
-    //         <span class="workout__icon">⚡️</span>
-    //         <span class="workout__value">${workout.speed.toFixed(1)}</span>
-    //         <span class="workout__unit">km/h</span>
-    //     </div>
-    //     <div class="workout__details">
-    //         <span class="workout__icon">⛰</span>
-    //         <span class="workout__value">${workout.elevationGain}</span>
-    //         <span class="workout__unit">m</span>
-    //     </div>
-    //     `;
-    // }
+        // Same thing without one line
+        // const workout = this.#workouts.find(work => work.id === workoutEl.dataset.id);
+        console.log(workout);
 
-    // html += `</li>`;
-
-    // form.insertAdjacentHTML('afterend', html);
+        this.#map.setView(workout.coords, this.#mapZoomLevel, {
+            animate: true,
+            pan: {
+                duration: 1,
+            }
+        });
+        
+        // Using the public interface
+        workout.click();
     }
 }
 
